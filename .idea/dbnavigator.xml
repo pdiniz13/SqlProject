@@ -30,6 +30,7 @@
       <group-entries value="true" />
       <execution-inputs />
     </execution-history>
+    <argument-values-cache />
   </component>
   <component name="DBNavigator.Project.Settings">
     <connections />
@@ -110,15 +111,18 @@
       </lookup-filters>
     </navigation-settings>
     <dataset-grid-settings>
+      <general>
+        <enable-zooming value="true" />
+      </general>
+      <sorting>
+        <nulls-first value="true" />
+        <max-sorting-columns value="4" />
+      </sorting>
       <tracking-columns>
         <columnNames value="" />
         <visible value="true" />
         <editable value="false" />
       </tracking-columns>
-      <sorting>
-        <nulls-first value="true" />
-        <max-sorting-columns value="4" />
-      </sorting>
     </dataset-grid-settings>
     <dataset-editor-settings>
       <text-editor-popup>
@@ -336,6 +340,7 @@
       <statement-execution>
         <execution-timeout value="20" />
         <debug-execution-timeout value="600" />
+        <parameter-history-size value="10" />
       </statement-execution>
       <compiler>
         <compile-type value="KEEP" />
