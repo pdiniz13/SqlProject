@@ -9,6 +9,7 @@ var routes = require('./routes/index');
 var users = require('./routes/users');
 var pg = require('pg');
 var async = require('async');
+var names = require('./names.js');
 
 var app = express();
 
@@ -25,19 +26,38 @@ app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
 
-var conString = "postgres://postgres:1234@localhost/postgres";
+var conString = info;
+//pg.connect(conString, function(err, client, done) {
+//  console.log(err);
+//  var locationQuery = "INSERT INTO location (xcoord, ycoord , latitude, longitude) select $1, $2, $3, $4 WHERE NOT EXISTS (SELECT xcoord FROM location WHERE xcoord = $1 and ycoord = $2);";
+//  var treeQuery = "INSERT INTO tree (name, qspeciesid, siteorder, qsiteinfo, qcaretaker, plantdate, dbh, plotsize, permitnotes, treeid, locationid) SELECT $1, (select distinct qspeciesid from qspecies where qspecies = $2 limit 1), $3, $4, $5, $6, $7, $8, $9, $10, (select distinct locationid from location where xcoord = $11 limit 1) WHERE NOT EXISTS (SELECT treeid FROM tree WHERE treeid = $10);";
+//  var qspeciesQuery = "INSERT INTO qspecies (qspecies) SELECT $1 WHERE NOT EXISTS (SELECT qspecies FROM qspecies WHERE qspecies = $1);";
+//  client.query(locationQuery, [xcoord, ycoord, latitude, longitude]);
+//  function(error, results) {
+//    //console.log("Finished location inserts!", error, results);
+//    done();
+//  }
+//  client.query(qspeciesQuery, [name, qspecies, siteorder, qsiteinfo, qcaretaker, plantdate, dbh, plotsize, permitnotes, treeid, xcoord], function(error, results) {
+//    //console.log("Finished tree inserts!", error, results);
+//    done();
+//  });
+//  client.query(treeQuery, [tree.qspecies], function(error, results) {
+//    //console.log("Finished tree inserts!", error, results);
+//    done();
+//  });
+//});
 
-
-var treeInsert = function(error, response, body) {
-  console.log("inside request");
-  console.log(error, "error");
-  var trees = JSON.parse(body);
+var treeInsert = function(error, response, body, callback) {
+  //console.log("inside request");
+  //console.log(error, "error");
+  //console.log(response);
   //console.log(body);
+  var trees = JSON.parse(body);
   //console.log(trees[0].qspecies);
   pg.connect(conString, function(err, client, done) {
     console.log(err);
     var locationQuery = "INSERT INTO location (xcoord, ycoord , latitude, longitude) select $1, $2, $3, $4 WHERE NOT EXISTS (SELECT xcoord FROM location WHERE xcoord = $1 and ycoord = $2);";
-    var treeQuery = "INSERT INTO tree (name, qspeciesid, siteorder, qsiteinfo, qcaretaker, plantdate, dbh, plotsize, permitnotes, treeid, locationid) SELECT 'tree', (select distinct qspeciesid from qspecies where qspecies = $1 limit 1), $2, $3, $4, $5, $6, $7, $8, $9, (select distinct locationid from location where xcoord = $10 limit 1) WHERE NOT EXISTS (SELECT treeid FROM tree WHERE treeid = $9);";
+    var treeQuery = "INSERT INTO tree (name, qspeciesid, siteorder, qsiteinfo, qcaretaker, plantdate, dbh, plotsize, permitnotes, treeid, locationid) SELECT $1, (select distinct qspeciesid from qspecies where qspecies = $2 limit 1), $3, $4, $5, $6, $7, $8, $9, $10, (select distinct locationid from location where xcoord = $11 limit 1) WHERE NOT EXISTS (SELECT treeid FROM tree WHERE treeid = $10);";
     var qspeciesQuery = "INSERT INTO qspecies (qspecies) SELECT $1 WHERE NOT EXISTS (SELECT qspecies FROM qspecies WHERE qspecies = $1);";
     async.map(trees, function(tree, cb) {
       var longitude,
@@ -56,15 +76,15 @@ var treeInsert = function(error, response, body) {
         xcoord = "9999";
         ycoord = "9999";
       }
-      client.query(locationQuery, [xcoord, ycoord, longitude, latitude]);
+      client.query(locationQuery, [xcoord, ycoord, latitude, longitude]);
     }, function(error, results) {
-      console.log("Finished location inserts!", error, results);
+      //console.log("Finished location inserts!", error, results);
       done();
     });
     async.map(trees, function(tree, cb) {
       client.query(qspeciesQuery, [tree.qspecies]);
     }, function(error, results) {
-      console.log("Finished qspecies inserts!", error, results);
+      //console.log("Finished qspecies inserts!", error, results);
       done();
     });
     async.map(trees, function(tree, cb) {
@@ -78,9 +98,10 @@ var treeInsert = function(error, response, body) {
         dbh = tree.dbh || 999,
         plotsize = tree.plotsize || "unknown",
         permitnotes = tree.permitnotes || "unknown";
-      client.query(treeQuery, [qspecies, siteorder, qsiteinfo, qcaretaker, plantdate, dbh, plotsize, permitnotes, treeid, xcoord]);
+      var name = names.pop()[0];
+      client.query(treeQuery, [name, qspecies, siteorder, qsiteinfo, qcaretaker, plantdate, dbh, plotsize, permitnotes, treeid, xcoord]);
     }, function(error, results) {
-      console.log("Finished tree inserts!", error, results);
+      //console.log("Finished tree inserts!", error, results);
       done();
     });
   });
@@ -105,14 +126,14 @@ var imageInsert = function() {
         var options = {
           uri: uri,
           auth: {
-            user: 'secret',
-            pass: 'secret'
+            user: 'hGDwtBW/yO/Dv0DAefKYF45CYLvgutQMwqUe2PSNL+w',
+            pass: 'hGDwtBW/yO/Dv0DAefKYF45CYLvgutQMwqUe2PSNL+w'
           }
         };
 
         var selectQuery = "SELECT * FROM image WHERE qspeciesid = $1;";
         client.query(selectQuery, [qspeciesid], function(err, results) {
-          if (results.rows === undefined || results.rows[0] === undefined){
+          if (results.rows === undefined || results.rows[0] === undefined) {
             console.log('database results', results);
             console.log('database rows', results.rows);
             request(options, function(err, response, results, body) {
@@ -143,10 +164,10 @@ var imageInsert = function() {
           }
         });
       };
-        async.map(queryResults, insertFunction, function(err, results) {
-          console.log(results);
-          console.log(err);
-        });
+      async.map(queryResults, insertFunction, function(err, results) {
+        console.log(results);
+        console.log(err);
+      });
     });
   });
 };
@@ -159,11 +180,19 @@ var options1 = {
 };
 
 async.series([
-  function(callback){request(options, treeInsert); callback(null, 'ok')},
-  function(callback){request(options1, treeInsert); callback(null, 'ok')},
-  function(callback){imageInsert(); callback(null, 'ok')}
+  function(callback) {
+    request(options, treeInsert);
+    callback(null)
+  },
+  function(callback) {
+    request(options1, treeInsert);
+    callback(null)
+  },
+  function(callback) {
+    imageInsert();
+    callback(null);
+  }
 ]);
-
 
 
 module.exports = app;
